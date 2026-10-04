@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ستايلي - لعبة التلبيس</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700&family=Lalezar&display=swap">
+<style>
+:root{--bg:#fff3f9;--card:#fff;--ink:#3a1f4d;--acc:#e0559a;--soft:#fbd9ea;--line:#efc9de;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1e1328;--card:#2b1d38;--ink:#fbe9f5;--soft:#43294f;--line:#5a3a69}}
+:root[data-theme="dark"]{--bg:#1e1328;--card:#2b1d38;--ink:#fbe9f5;--soft:#43294f;--line:#5a3a69}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Cairo',system-ui,sans-serif;min-height:100vh}
+h1{font-family:'Lalezar','Cairo',sans-serif;font-weight:400;font-size:2.2rem;margin:0;text-align:center;padding:14px 8px 4px;color:var(--acc)}
+.sub{text-align:center;margin:0 0 10px;font-size:.95rem;opacity:.8}
+main{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;padding:8px 14px 28px;max-width:900px;margin:auto}
+.stage{flex:1 1 280px;max-width:340px;background:var(--card);border:2px solid var(--line);border-radius:28px;padding:10px;align-self:flex-start}
+.stage svg{width:100%;height:auto;display:block;border-radius:20px}
+.acts{display:flex;gap:8px;margin-top:10px}
+.acts button{flex:1}
+.panel{flex:1 1 300px;max-width:480px;background:var(--card);border:2px solid var(--line);border-radius:28px;padding:12px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:8px;border-bottom:2px dashed var(--line)}
+.tabs button{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;min-width:62px;border-radius:14px;background:transparent;border:2px solid transparent;color:var(--ink);font:inherit;font-size:.8rem;cursor:pointer}
+.tabs button .e{font-size:1.4rem}
+.tabs button[aria-selected="true"]{background:var(--soft);border-color:var(--acc)}
+h2{font-size:1rem;margin:10px 2px 6px}
+.chips,.dots{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+.dot{width:36px;height:36px;border-radius:50%;border:3px solid var(--card);box-shadow:0 0 0 2px var(--line);cursor:pointer;padding:0}
+.dot[aria-pressed="true"]{box-shadow:0 0 0 3px var(--acc)}
+button.main{padding:10px 12px;border-radius:14px;border:0;background:var(--acc);color:#fff;font:inherit;font-weight:700;cursor:pointer}
+button.alt{padding:10px 12px;border-radius:14px;border:2px solid var(--acc);background:transparent;color:var(--acc);font:inherit;font-weight:700;cursor:pointer}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.saved{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.saved button{width:64px;border:2px solid var(--line);border-radius:14px;background:var(--card);padding:2px;cursor:pointer}
+.saved svg{width:100%;height:auto;display:block;border-radius:10px}
+.note{font-size:.85rem;opacity:.75;margin:4px 2px}
+</style>
+</head>
+<body>
+<h1>ستايلي</h1>
+<p class="sub">ألبسي الشخصية، جرّبي ألوان وتشكيلات، واحفظي إطلالاتك المفضلة</p>
+<main>
+  <section class="stage" aria-label="الشخصية">
+    <div id="stage"></div>
+    <div class="acts">
+      <button class="main" id="rnd">🎲 عشوائي</button>
+      <button class="alt" id="sv">💾 احفظي الإطلالة</button>
+      <button class="alt" id="rs">↺ من جديد</button>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <div id="opts"></div>
+    <h2>إطلالاتك المحفوظة</h2>
+    <div class="saved" id="saved"></div>
+    <p class="note" id="sn">لسا ما حفظتي أي إطلالة. اضغطي "احفظي الإطلالة" لما تعجبك وحدة.</p>
+  </section>
+</main>
+<script>
+const P=['#e91e63','#9c27b0','#3f51b5','#03a9f4','#009688','#4caf50','#ffc107','#ff7043','#f8bbd0','#ffffff','#212121'];
+const H=['#2b1b17','#5a3825','#a0522d','#d4a24c','#e8c07a','#c0392b','#8e44ad','#2980b9','#ec7fb0','#f5f5f5','#212121'];
+const SK=['#ffe0c7','#f5cfa8','#e2b48a','#c68e63','#a06a45','#6f4a30'];
+const CATS=[
+ {k:'skin',l:'البشرة',e:'🧑',c:SK},
+ {k:'hair',l:'الشعر',e:'💇‍♀️',s:['بدون','طويل','قصير','ضفيرة','كعكة','حجاب'],c:H},
+ {k:'dress',l:'فستان',e:'👗',s:['بدون','واسع','ضيّق','طبقات'],c:P},
+ {k:'top',l:'قميص',e:'👚',s:['بدون','تيشرت','كم طويل','سترة'],c:P},
+ {k:'bottom',l:'أسفل',e:'👖',s:['بدون','تنورة','بنطلون','شورت'],c:P},
+ {k:'shoes',l:'حذاء',e:'👟',s:['بدون','رياضي','كعب','بوت'],c:P},
+ {k:'acc',l:'إكسسوار',e:'👑',s:['بدون','نظارة','تاج','فيونكة','قلادة'],c:P},
+ {k:'bg',l:'خلفية',e:'🏞️',s:['وردي','سماء','حديقة','ليل']}
+];
+const DEF=()=>({skin:{c:1},hair:{s:1,c:1},dress:{s:1,c:0},top:{s:0,c:0},bottom:{s:0,c:0},shoes:{s:1,c:9},acc:{s:0,c:6},bg:{s:0}});
+let S=DEF(),cur='hair',saved=[];
+
+function bgS(i){
+ const st=[
+ '<rect width="200" height="350" fill="#ffe1ef"/><circle cx="30" cy="40" r="26" fill="#fff" opacity=".5"/><circle cx="170" cy="90" r="34" fill="#fff" opacity=".4"/><circle cx="150" cy="260" r="20" fill="#fff" opacity=".4"/>',
+ '<rect width="200" height="350" fill="#bfe6ff"/><g fill="#fff"><circle cx="40" cy="50" r="16"/><circle cx="58" cy="54" r="20"/><circle cx="78" cy="52" r="14"/><circle cx="150" cy="100" r="14"/><circle cx="168" cy="104" r="18"/></g><rect y="318" width="200" height="32" fill="#a8e0a0"/>',
+ '<rect width="200" height="350" fill="#dff3d0"/><rect y="312" width="200" height="38" fill="#7fc872"/><g><circle cx="24" cy="326" r="6" fill="#ff7aa8"/><circle cx="170" cy="334" r="6" fill="#ffd54f"/><circle cx="46" cy="340" r="5" fill="#fff"/><circle cx="150" cy="322" r="5" fill="#ba68c8"/><circle cx="185" cy="40" r="22" fill="#fff3a8"/></g>',
+ '<rect width="200" height="350" fill="#261a4a"/><circle cx="160" cy="44" r="16" fill="#fff3b0"/><g fill="#fff"><circle cx="30" cy="30" r="1.8"/><circle cx="70" cy="60" r="1.4"/><circle cx="110" cy="24" r="2"/><circle cx="40" cy="120" r="1.5"/><circle cx="170" cy="130" r="1.6"/><circle cx="20" cy="200" r="1.4"/><circle cx="182" cy="220" r="1.8"/></g><rect y="322" width="200" height="28" fill="#3a2a66"/>'];
+ return st[i];
+}
+
+function R(S){
+ const sk=SK[S.skin.c],c=k=>(k=='hair'?H:P)[S[k].c],s=k=>S[k].s;
+ const hs=s('hair'),hc=c('hair');
+ let o=bgS(s('bg'));
+ o+='<ellipse cx="100" cy="334" rx="55" ry="7" fill="rgba(0,0,0,.15)"/>';
+ if(hs==1)o+=`<path d="M64 62Q64 18 100 18Q136 18 136 62L142 160Q100 168 58 160Z" fill="${hc}"/>`;
+ if(hs==2)o+=`<path d="M64 62Q64 18 100 18Q136 18 136 62L136 92Q100 100 64 92Z" fill="${hc}"/>`;
+ if(hs==3)o+=`<path d="M66 62Q66 20 100 20Q134 20 134 62Z" fill="${hc}"/><g fill="${hc}"><circle cx="64" cy="92" r="9"/><circle cx="62" cy="112" r="8"/><circle cx="60" cy="130" r="7"/><circle cx="136" cy="92" r="9"/><circle cx="138" cy="112" r="8"/><circle cx="140" cy="130" r="7"/></g>`;
+ if(hs==4)o+=`<circle cx="100" cy="16" r="15" fill="${hc}"/><path d="M66 62Q66 20 100 20Q134 20 134 62Z" fill="${hc}"/>`;
+ o+=`<g stroke="${sk}" stroke-linecap="round" fill="none"><path d="M70 108L52 190" stroke-width="12"/><path d="M130 108L148 190" stroke-width="12"/><path d="M90 190V322M110 190V322" stroke-width="14"/></g><rect x="92" y="86" width="16" height="18" fill="${sk}"/><path d="M72 104H128V196H72Z" fill="${sk}"/>`;
+ const ds=s('dress'),dc=c('dress');
+ if(ds){
+  if(ds==1)o+=`<path d="M70 104H130L126 150L166 296H34L74 150Z" fill="${dc}"/>`;
+  if(ds==2)o+=`<path d="M72 104H128L131 200L125 292H75L69 200Z" fill="${dc}"/>`;
+  if(ds==3)o+=`<path d="M70 104H130L128 140L150 190L172 296H28L50 190L72 140Z" fill="${dc}"/><path d="M52 190Q100 206 148 190M34 246Q100 266 166 246" stroke="rgba(0,0,0,.18)" stroke-width="3" fill="none"/>`;
+ }else{
+  const bs=s('bottom'),bc=c('bottom'),ts=s('top'),tc=c('top');
+  if(bs==1)o+=`<path d="M72 188H128L148 252H52Z" fill="${bc}"/>`;
+  if(bs==2)o+=`<path d="M90 192V316M110 192V316" stroke="${bc}" stroke-width="17" stroke-linecap="round"/><rect x="72" y="186" width="56" height="18" rx="4" fill="${bc}"/>`;
+  if(bs==3)o+=`<path d="M72 188H128L131 236H103L100 214L97 236H69Z" fill="${bc}"/>`;
+  if(ts==1)o+=`<path d="M68 104H132L138 136L124 142V192H76V142L62 136Z" fill="${tc}"/>`;
+  if(ts>=2)o+=`<path d="M70 104H130V194H70Z" fill="${tc}"/><path d="M70 110L55 176M130 110L145 176" stroke="${tc}" stroke-width="13" stroke-linecap="round" fill="none"/>`;
+  if(ts==3)o+=`<path d="M100 104V194" stroke="rgba(0,0,0,.25)" stroke-width="2"/><circle cx="100" cy="112" r="4" fill="rgba(0,0,0,.25)"/>`;
+ }
+ const ss=s('shoes'),sc=c('shoes');
+ if(ss==1)o+=`<ellipse cx="88" cy="326" rx="14" ry="7" fill="${sc}"/><ellipse cx="112" cy="326" rx="14" ry="7" fill="${sc}"/><path d="M74 331H102M98 331H126" stroke="#fff" stroke-width="3"/>`;
+ if(ss==2)o+=`<ellipse cx="86" cy="326" rx="12" ry="5" fill="${sc}"/><ellipse cx="114" cy="326" rx="12" ry="5" fill="${sc}"/><rect x="95" y="326" width="3" height="8" fill="${sc}"/><rect x="102" y="326" width="3" height="8" fill="${sc}"/>`;
+ if(ss==3)o+=`<rect x="81" y="294" width="16" height="36" rx="5" fill="${sc}"/><rect x="103" y="294" width="16" height="36" rx="5" fill="${sc}"/><ellipse cx="86" cy="330" rx="14" ry="5" fill="${sc}"/><ellipse cx="114" cy="330" rx="14" ry="5" fill="${sc}"/>`;
+ if(hs==5)o+=`<path d="M60 64Q58 14 100 14Q142 14 140 64Q148 110 158 150Q100 168 42 150Q52 110 60 64Z" fill="${hc}"/>`;
+ o+=`<circle cx="100" cy="64" r="27" fill="${sk}"/><circle cx="91" cy="64" r="2.6" fill="#3a2a2a"/><circle cx="109" cy="64" r="2.6" fill="#3a2a2a"/><path d="M92 74Q100 81 108 74" stroke="#b5476b" stroke-width="2.4" stroke-linecap="round" fill="none"/><circle cx="84" cy="72" r="4" fill="#ff7aa8" opacity=".4"/><circle cx="116" cy="72" r="4" fill="#ff7aa8" opacity=".4"/>`;
+ if(hs>=1)o+=`<path d="M72 60Q72 32 100 32Q128 32 128 60Q112 44 100 44Q88 44 72 60Z" fill="${hc}"/>`;
+ const as=s('acc'),ac=c('acc');
+ if(as==1)o+=`<g fill="none" stroke="${ac}" stroke-width="2.6"><circle cx="91" cy="64" r="8.5"/><circle cx="109" cy="64" r="8.5"/><path d="M99.5 64H100.5"/></g>`;
+ if(as==2)o+=`<path d="M78 34L82 12L92 26L100 8L108 26L118 12L122 34Z" fill="${ac}" stroke="rgba(0,0,0,.2)" stroke-width="1.5"/>`;
+ if(as==3)o+=`<path d="M118 34L136 24V46Z M118 34L100 24V46Z" fill="${ac}" transform="translate(6 -2) scale(.85)"/><circle cx="122" cy="33" r="4" fill="${ac}" stroke="rgba(0,0,0,.2)"/>`;
+ if(as==4)o+=`<path d="M86 102Q100 128 114 102" stroke="${ac}" stroke-width="3" fill="none"/><circle cx="100" cy="118" r="5" fill="${ac}" stroke="rgba(0,0,0,.2)"/>`;
+ return o;
+}
+const svg=(S,cls)=>`<svg viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="شخصية التلبيس">${R(S)}</svg>`;
+
+function draw(){
+ document.getElementById('stage').innerHTML=svg(S);
+ document.getElementById('tabs').innerHTML=CATS.map(x=>`<button role="tab" aria-selected="${x.k==cur}" data-t="${x.k}"><span class="e">${x.e}</span>${x.l}</button>`).join('');
+ const x=CATS.find(y=>y.k==cur);let h='';
+ if(x.s)h+=`<h2>الشكل</h2><div class="chips">${x.s.map((n,i)=>`<button class="chip" aria-pressed="${S[cur].s===i}" data-s="${i}">${n}</button>`).join('')}</div>`;
+ if(x.c&&!(x.s&&S[cur].s===0&&cur!='bg'))h+=`<h2>اللون</h2><div class="dots">${x.c.map((v,i)=>`<button class="dot" style="background:${v}" aria-label="لون ${i+1}" aria-pressed="${S[cur].c===i}" data-c="${i}"></button>`).join('')}</div>`;
+ if(cur=='dress'&&S.dress.s)h+='<p class="note">الفستان بيغطي القميص والأسفل. اختاري "بدون" عشان ترجعي تفصّلي قطعتين.</p>';
+ document.getElementById('opts').innerHTML=h;
+ const sv=document.getElementById('saved');
+ sv.innerHTML=saved.map((v,i)=>`<button data-l="${i}" aria-label="إطلالة ${i+1}">${svg(v)}</button>`).join('');
+ document.getElementById('sn').style.display=saved.length?'none':'block';
+}
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.t)cur=b.dataset.t;
+ else if(b.dataset.s!==undefined)S[cur].s=+b.dataset.s;
+ else if(b.dataset.c!==undefined)S[cur].c=+b.dataset.c;
+ else if(b.dataset.l!==undefined)S=JSON.parse(JSON.stringify(saved[+b.dataset.l]));
+ else if(b.id=='rs')S=DEF();
+ else if(b.id=='rnd'){const r=n=>Math.floor(Math.random()*n);CATS.forEach(x=>{if(x.k=='skin')return;if(x.s)S[x.k].s=r(x.s.length);if(x.c)S[x.k].c=r(x.c.length)});}
+ else if(b.id=='sv'){saved.push(JSON.parse(JSON.stringify(S)));if(saved.length>6)saved.shift();try{localStorage.setItem('stylay',JSON.stringify(saved))}catch(_){}}
+ else return;
+ draw();
+});
+try{const v=JSON.parse(localStorage.getItem('stylay')||'[]');if(Array.isArray(v))saved=v.slice(-6)}catch(_){}
+draw();
+</script>
+</body>
+</html>
